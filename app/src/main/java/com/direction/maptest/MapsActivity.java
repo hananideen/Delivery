@@ -12,14 +12,10 @@ import java.util.List;
 
 import org.json.JSONObject;
 
-import android.content.Context;
 import android.graphics.Color;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,14 +23,13 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends AppCompatActivity {
 
     GoogleMap map;
     ArrayList<LatLng> markerPoints;
@@ -53,50 +48,29 @@ public class MapsActivity extends FragmentActivity {
         // Initializing
         markerPoints = new ArrayList<LatLng>();
 
-        // Getting reference to SupportMapFragment of the activity_main
         SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
-
-        // Getting Map for the SupportMapFragment
         map = fm.getMap();
-
-        // Enable MyLocation Button in the Map
         map.setMyLocationEnabled(true);
 
+        //TODO get destination from server
         LatLng destination = new LatLng(2.923, 101.638);
         map.addMarker(new MarkerOptions().position(destination).title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
-//        // Get LocationManager object from System Service LOCATION_SERVICE
-//        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//
-//        // Create a criteria object to retrieve provider
-//        Criteria criteria = new Criteria();
-//
-//        // Get the name of the best provider
-//        String provider = locationManager.getBestProvider(criteria, true);
-//
-//        // Get Current Location
-//        Location myLocation = locationManager.getLastKnownLocation(provider);
-//
-//        // Get latitude of the current location
-//        double latitude = myLocation.getLatitude();
-//
-//        // Get longitude of the current location
-//        double longitude = myLocation.getLongitude();
 
         gps = new GPSTracker(MapsActivity.this);
         if(gps.canGetLocation()) {
             latitude = gps.getLatitude();
             longitude = gps.getLongitude();
-            Toast.makeText(getApplicationContext(),"Your Location is -\nLat: " + latitude + "\nLong: "+ longitude, Toast.LENGTH_LONG).show();
         } else {
             gps.showSettingsAlert();
-
         }
 
         // Create a LatLng object for the current location
         LatLng myLoc = new LatLng(latitude, longitude);
         CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
+        map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)));
         map.animateCamera(zoomLocation);
 
         // Checks, whether start and end locations are captured
@@ -275,7 +249,7 @@ public class MapsActivity extends FragmentActivity {
                 lineOptions.color(Color.RED);
             }
 
-            tvDistanceDuration.setText("Distance:"+distance + ", Duration:"+duration);
+            tvDistanceDuration.setText("Distance:" + distance + ", Duration:" + duration);
 
             // Drawing polyline in the Google Map for the i-th route
             map.addPolyline(lineOptions);
