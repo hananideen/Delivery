@@ -42,6 +42,9 @@ public class MapsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.mipmap.melodelivery_logo);
+
         tvDistanceDuration = (TextView) findViewById(R.id.tv_distance_time);
         tvBefore = (TextView) findViewById(R.id.textViewBefore);
 
