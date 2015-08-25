@@ -58,7 +58,7 @@ public class MapsActivity extends AppCompatActivity {
         //TODO get destination from server
         LatLng destination = new LatLng(2.923, 101.638);
         map.addMarker(new MarkerOptions().position(destination).title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
 
 
         gps = new GPSTracker(MapsActivity.this);
@@ -73,7 +73,7 @@ public class MapsActivity extends AppCompatActivity {
         LatLng myLoc = new LatLng(latitude, longitude);
         CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
         map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)));
+                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
         map.animateCamera(zoomLocation);
 
         // Checks, whether start and end locations are captured
