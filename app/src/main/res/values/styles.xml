@@ -2,7 +2,9 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/valencia</item>
+        <item name="colorAccent">@color/purple</item>
+        <item name="android:titleTextStyle">@android:color/white</item>
     </style>
 
 </resources>

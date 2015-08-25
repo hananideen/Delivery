@@ -55,7 +55,7 @@ public class MapsActivity extends AppCompatActivity {
         //TODO get destination from server
         LatLng destination = new LatLng(2.923, 101.638);
         map.addMarker(new MarkerOptions().position(destination).title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
 
 
         gps = new GPSTracker(MapsActivity.this);
@@ -246,7 +246,7 @@ public class MapsActivity extends AppCompatActivity {
                 // Adding all the points in the route to LineOptions
                 lineOptions.addAll(points);
                 lineOptions.width(2);
-                lineOptions.color(Color.RED);
+                lineOptions.color(Color.BLUE);
             }
 
             tvDistanceDuration.setText("Distance:" + distance + ", Duration:" + duration);
