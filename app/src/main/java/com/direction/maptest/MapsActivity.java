@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
@@ -35,8 +36,10 @@ public class MapsActivity extends AppCompatActivity {
     ArrayList<LatLng> markerPoints;
     TextView tvDistanceDuration, tvBefore;
     GPSTracker gps;
+    LatLng myLoc;
     double latitude;
     double longitude;
+    Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +51,6 @@ public class MapsActivity extends AppCompatActivity {
         tvDistanceDuration = (TextView) findViewById(R.id.tv_distance_time);
         tvBefore = (TextView) findViewById(R.id.textViewBefore);
 
-        // Initializing
         markerPoints = new ArrayList<LatLng>();
 
         SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
@@ -60,33 +62,32 @@ public class MapsActivity extends AppCompatActivity {
         map.addMarker(new MarkerOptions().position(destination).title("Destination")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
 
-
         gps = new GPSTracker(MapsActivity.this);
         if(gps.canGetLocation()) {
             latitude = gps.getLatitude();
             longitude = gps.getLongitude();
+            myLoc = new LatLng(latitude, longitude);
+            CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
+            map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
+            map.animateCamera(zoomLocation);
+
+            LatLng origin = myLoc;
+            LatLng dest = destination;
+
+            // Getting URL to the Google Directions API
+            String url = getDirectionsUrl(origin, dest);
+
+            DownloadTask downloadTask = new DownloadTask();
+
+            // Start downloading json data from Google Directions API
+            downloadTask.execute(url);
+
+            this.mHandler = new Handler();
+            this.mHandler.postDelayed(m_Runnable, 30000);
         } else {
             gps.showSettingsAlert();
         }
-
-        // Create a LatLng object for the current location
-        LatLng myLoc = new LatLng(latitude, longitude);
-        CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
-        map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
-                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
-        map.animateCamera(zoomLocation);
-
-        // Checks, whether start and end locations are captured
-        LatLng origin = myLoc;
-        LatLng dest = destination;
-
-        // Getting URL to the Google Directions API
-        String url = getDirectionsUrl(origin, dest);
-
-        DownloadTask downloadTask = new DownloadTask();
-
-        // Start downloading json data from Google Directions API
-        downloadTask.execute(url);
     }
 
     private String getDirectionsUrl(LatLng origin,LatLng dest){
@@ -258,5 +259,12 @@ public class MapsActivity extends AppCompatActivity {
             map.addPolyline(lineOptions);
         }
     }
+
+    private final Runnable m_Runnable = new Runnable() {
+        public void run() {
+            Toast.makeText(MapsActivity.this,"refresh",Toast.LENGTH_SHORT).show();
+            MapsActivity.this.mHandler.postDelayed(m_Runnable, 30000);
+        }
+    };
 
 }
