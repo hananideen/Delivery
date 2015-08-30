@@ -48,6 +48,9 @@ public class MapsActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setIcon(R.mipmap.melodelivery_logo);
 
+        this.mHandler = new Handler();
+        this.mHandler.postDelayed(m_Runnable, 30000);
+
         tvDistanceDuration = (TextView) findViewById(R.id.tv_distance_time);
         tvBefore = (TextView) findViewById(R.id.textViewBefore);
 
@@ -83,12 +86,44 @@ public class MapsActivity extends AppCompatActivity {
             // Start downloading json data from Google Directions API
             downloadTask.execute(url);
 
-            this.mHandler = new Handler();
-            this.mHandler.postDelayed(m_Runnable, 30000);
         } else {
             gps.showSettingsAlert();
         }
     }
+
+    private final Runnable m_Runnable = new Runnable() {
+        public void run() {
+            map.clear();
+
+            LatLng destination = new LatLng(2.923, 101.638);
+            map.addMarker(new MarkerOptions().position(destination).title("Destination")
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
+
+            gps = new GPSTracker(MapsActivity.this);
+            if(gps.canGetLocation()) {
+                latitude = gps.getLatitude();
+                longitude = gps.getLongitude();
+                myLoc = new LatLng(latitude, longitude);
+                map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
+
+                LatLng origin = myLoc;
+                LatLng dest = destination;
+
+                // Getting URL to the Google Directions API
+                String url = getDirectionsUrl(origin, dest);
+
+                DownloadTask downloadTask = new DownloadTask();
+
+                // Start downloading json data from Google Directions API
+                downloadTask.execute(url);
+
+            }
+
+            Toast.makeText(MapsActivity.this,"refresh",Toast.LENGTH_SHORT).show();
+            MapsActivity.this.mHandler.postDelayed(m_Runnable, 30000);
+        }
+    };
 
     private String getDirectionsUrl(LatLng origin,LatLng dest){
 
@@ -259,12 +294,5 @@ public class MapsActivity extends AppCompatActivity {
             map.addPolyline(lineOptions);
         }
     }
-
-    private final Runnable m_Runnable = new Runnable() {
-        public void run() {
-            Toast.makeText(MapsActivity.this,"refresh",Toast.LENGTH_SHORT).show();
-            MapsActivity.this.mHandler.postDelayed(m_Runnable, 30000);
-        }
-    };
 
 }
