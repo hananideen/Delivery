@@ -27,7 +27,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 public class MapsActivity extends AppCompatActivity {
@@ -36,10 +38,12 @@ public class MapsActivity extends AppCompatActivity {
     ArrayList<LatLng> markerPoints;
     TextView tvDistanceDuration, tvBefore;
     GPSTracker gps;
-    LatLng myLoc;
+    LatLng myLoc, destination;
     double latitude;
     double longitude;
     Handler mHandler;
+    Marker driver;
+    Polyline line;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +65,7 @@ public class MapsActivity extends AppCompatActivity {
         map.setMyLocationEnabled(true);
 
         //TODO get destination from server
-        LatLng destination = new LatLng(2.923, 101.638);
+        destination = new LatLng(2.923, 101.638);
         map.addMarker(new MarkerOptions().position(destination).title("Destination")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
 
@@ -71,9 +75,11 @@ public class MapsActivity extends AppCompatActivity {
             longitude = gps.getLongitude();
             myLoc = new LatLng(latitude, longitude);
             CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
-            map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+            driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
                     .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
             map.animateCamera(zoomLocation);
+
+            //TODO send location to server
 
             LatLng origin = myLoc;
             LatLng dest = destination;
@@ -93,34 +99,29 @@ public class MapsActivity extends AppCompatActivity {
 
     private final Runnable m_Runnable = new Runnable() {
         public void run() {
-            map.clear();
+            driver.remove();
+            line.remove();
 
-            LatLng destination = new LatLng(2.923, 101.638);
-            map.addMarker(new MarkerOptions().position(destination).title("Destination")
-                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
-
-            gps = new GPSTracker(MapsActivity.this);
             if(gps.canGetLocation()) {
                 latitude = gps.getLatitude();
                 longitude = gps.getLongitude();
                 myLoc = new LatLng(latitude, longitude);
-                map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+                driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
 
+                //TODO send location to server
                 LatLng origin = myLoc;
                 LatLng dest = destination;
 
-                // Getting URL to the Google Directions API
                 String url = getDirectionsUrl(origin, dest);
-
                 DownloadTask downloadTask = new DownloadTask();
-
-                // Start downloading json data from Google Directions API
                 downloadTask.execute(url);
 
+            }else {
+                gps.showSettingsAlert();
             }
 
-            Toast.makeText(MapsActivity.this,"refresh",Toast.LENGTH_SHORT).show();
+            Toast.makeText(MapsActivity.this,"update",Toast.LENGTH_SHORT).show();
             MapsActivity.this.mHandler.postDelayed(m_Runnable, 30000);
         }
     };
@@ -291,7 +292,7 @@ public class MapsActivity extends AppCompatActivity {
             tvDistanceDuration.setText("Distance:" + distance + ", Duration:" + duration);
 
             // Drawing polyline in the Google Map for the i-th route
-            map.addPolyline(lineOptions);
+            line = map.addPolyline(lineOptions);
         }
     }
 
