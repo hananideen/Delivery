@@ -378,6 +378,7 @@ public class MapsActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_manual) {
+            this.mHandler.removeCallbacks(m_Runnable);
             Intent intent = new Intent(MapsActivity.this, ManualActivity.class);
             startActivity(intent);
             return true;
