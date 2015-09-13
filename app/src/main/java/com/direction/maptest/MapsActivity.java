@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.graphics.Color;
@@ -23,6 +25,10 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -41,7 +47,7 @@ public class MapsActivity extends AppCompatActivity {
     TextView tvDistanceDuration, tvBefore;
     GPSTracker gps;
     LatLng myLoc, destination;
-    double latitude, longitude;
+    double latitude, longitude, latServer, longServer;
     String sendLat, sendLong;
     Handler mHandler;
     Marker driver;
@@ -55,7 +61,7 @@ public class MapsActivity extends AppCompatActivity {
         getSupportActionBar().setIcon(R.mipmap.melodelivery_logo);
 
         this.mHandler = new Handler();
-        this.mHandler.postDelayed(m_Runnable, 30000);
+        this.mHandler.postDelayed(m_Runnable, 10000);
 
         tvDistanceDuration = (TextView) findViewById(R.id.tv_distance_time);
         tvBefore = (TextView) findViewById(R.id.textViewBefore);
@@ -66,11 +72,46 @@ public class MapsActivity extends AppCompatActivity {
         map = fm.getMap();
         map.setMyLocationEnabled(true);
 
-        //TODO get destination from server
-        destination = new LatLng(2.923, 101.638);
-        map.addMarker(new MarkerOptions().position(destination).title("Destination " +"2.923"
-                + ", " +"101.638")
-                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
+//        destination = new LatLng(2.923, 101.638);
+//        map.addMarker(new MarkerOptions().position(destination).title("Destination " +String.format("%.3f", latServer)
+//                + ", " +String.format("%.3f", longServer))
+//                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
+
+        JsonArrayRequest locationRequest = new JsonArrayRequest(ApplicationLoader.getIp("restaurant/userlocation.php"), new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                for (int i = 0; i < response.length(); i++) {
+                    try {
+                        JSONObject obj = response.getJSONObject(i);
+                        Location coordinates = new Location(new Json2Location(obj));
+                        latServer = coordinates.getLatitude();
+                        longServer = coordinates.getLongitude();
+                        destination = new LatLng(latServer, longServer);
+                        map.addMarker(new MarkerOptions().position(destination).title("Destination " +String.format("%.3f", latServer)
+                                + ", " +String.format("%.3f", longServer))
+                                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
+
+                        LatLng origin = myLoc;
+                        LatLng dest = destination;
+
+                        String url = getDirectionsUrl(origin, dest);
+                        DownloadTask downloadTask = new DownloadTask();
+                        downloadTask.execute(url);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                VolleyLog.d("VolleyServer", "Error: " + error.getMessage());
+                Toast.makeText(getApplication(), "Oops! Have you checked your internet connection?", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        VolleySingleton.getInstance().getRequestQueue().add(locationRequest);
 
         gps = new GPSTracker(MapsActivity.this);
         if(gps.canGetLocation()) {
@@ -86,19 +127,6 @@ public class MapsActivity extends AppCompatActivity {
                     + ", " + String.format("%.3f", longitude))
                     .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
             map.animateCamera(zoomLocation);
-
-            //TODO send location to server
-
-            LatLng origin = myLoc;
-            LatLng dest = destination;
-
-            // Getting URL to the Google Directions API
-            String url = getDirectionsUrl(origin, dest);
-
-            DownloadTask downloadTask = new DownloadTask();
-
-            // Start downloading json data from Google Directions API
-            downloadTask.execute(url);
 
         } else {
             gps.showSettingsAlert();
@@ -118,11 +146,10 @@ public class MapsActivity extends AppCompatActivity {
                 sendLong = String.format("%.3f", longitude);
                 new Send().execute("http://mynetsys.com/restaurant/deliverylocation.php?latitude="+sendLat+"&longitude="+sendLong);
 
-                driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location" + String.format("%.3f", latitude)
+                driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location " + String.format("%.3f", latitude)
                         + ", " + String.format("%.3f", longitude))
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
 
-                //TODO send location to server
                 LatLng origin = myLoc;
                 LatLng dest = destination;
 
@@ -134,8 +161,8 @@ public class MapsActivity extends AppCompatActivity {
                 gps.showSettingsAlert();
             }
 
-            Toast.makeText(MapsActivity.this,"update",Toast.LENGTH_SHORT).show();
-            MapsActivity.this.mHandler.postDelayed(m_Runnable, 30000);
+            //Toast.makeText(MapsActivity.this,"update",Toast.LENGTH_SHORT).show();
+            MapsActivity.this.mHandler.postDelayed(m_Runnable, 10000);
         }
     };
 
@@ -265,7 +292,7 @@ public class MapsActivity extends AppCompatActivity {
             String duration = "";
 
             if(result.size()<1){
-                Toast.makeText(getBaseContext(), "No Points", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getBaseContext(), "No Points", Toast.LENGTH_SHORT).show();
                 return;
             }
 
