@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +41,8 @@ public class MapsActivity extends AppCompatActivity {
     TextView tvDistanceDuration, tvBefore;
     GPSTracker gps;
     LatLng myLoc, destination;
-    double latitude;
-    double longitude;
+    double latitude, longitude;
+    String sendLat, sendLong;
     Handler mHandler;
     Marker driver;
     Polyline line;
@@ -66,7 +68,8 @@ public class MapsActivity extends AppCompatActivity {
 
         //TODO get destination from server
         destination = new LatLng(2.923, 101.638);
-        map.addMarker(new MarkerOptions().position(destination).title("Destination")
+        map.addMarker(new MarkerOptions().position(destination).title("Destination " +"2.923"
+                + ", " +"101.638")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.marker_finish)));
 
         gps = new GPSTracker(MapsActivity.this);
@@ -74,8 +77,13 @@ public class MapsActivity extends AppCompatActivity {
             latitude = gps.getLatitude();
             longitude = gps.getLongitude();
             myLoc = new LatLng(latitude, longitude);
+            sendLat =  String.format("%.3f", latitude);
+            sendLong = String.format("%.3f", longitude);
+            new Send().execute("http://mynetsys.com/restaurant/deliverylocation.php?latitude="+sendLat+"&longitude="+sendLong);
+
             CameraUpdate zoomLocation = CameraUpdateFactory.newLatLngZoom(myLoc, 15);
-            driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+            driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location " + String.format("%.3f", latitude)
+                    + ", " + String.format("%.3f", longitude))
                     .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
             map.animateCamera(zoomLocation);
 
@@ -106,7 +114,12 @@ public class MapsActivity extends AppCompatActivity {
                 latitude = gps.getLatitude();
                 longitude = gps.getLongitude();
                 myLoc = new LatLng(latitude, longitude);
-                driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location")
+                sendLat =  String.format("%.3f", latitude);
+                sendLong = String.format("%.3f", longitude);
+                new Send().execute("http://mynetsys.com/restaurant/deliverylocation.php?latitude="+sendLat+"&longitude="+sendLong);
+
+                driver = map.addMarker(new MarkerOptions().position(myLoc).title("My Location" + String.format("%.3f", latitude)
+                        + ", " + String.format("%.3f", longitude))
                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.melody_logo)));
 
                 //TODO send location to server
@@ -293,6 +306,36 @@ public class MapsActivity extends AppCompatActivity {
 
             // Drawing polyline in the Google Map for the i-th route
             line = map.addPolyline(lineOptions);
+        }
+    }
+
+    class Send extends AsyncTask<String, Void, Boolean> {
+        String result;
+        @Override
+        protected Boolean doInBackground(String... params) {
+            try{
+                URL url = new URL(params[0]);
+                URLConnection connection = url.openConnection();
+                HttpURLConnection conn = (HttpURLConnection)connection;
+                int responseCode = conn.getResponseCode();
+                if(responseCode == HttpURLConnection.HTTP_OK) {
+                    InputStream is = conn.getInputStream();
+                    InputStreamReader isr = new InputStreamReader(is,"UTF-8");
+                    BufferedReader reader = new BufferedReader(isr);
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line + " sucess");
+                    }
+                    result = sb.toString();
+                    return true;
+                }
+            }catch (MalformedURLException e) {
+                e.printStackTrace();
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+            return false;
         }
     }
 
